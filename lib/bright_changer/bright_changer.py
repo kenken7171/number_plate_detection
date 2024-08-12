@@ -4,7 +4,7 @@ import random
 
 class BrightChanger:
     def __init__(self):
-        self.bright_rate = 0.5
+        self.bright_rate = self.set_random_rate()
         
     def set_random_rate(self):
         # 0 ~ 1.0の範囲でランダムな明るさを設定
