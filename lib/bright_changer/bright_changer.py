@@ -7,8 +7,8 @@ class BrightChanger:
         self.bright_rate = self.get_random_rate()
         
     def get_random_rate(self):
-        # 0 ~ 1.0の範囲でランダムな明るさを設定
-        return random.random()
+        # 0.1 ~ 1.0の範囲でランダムな明るさを設定
+        return random.uniform(0.1, 1.0)
 
     def change(self, image):
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
