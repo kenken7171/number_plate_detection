@@ -31,7 +31,7 @@ class AffineTransformer:
 
         # 変換後の画像を生成、余白は黒で埋める
         transformed_image = cv2.warpPerspective(
-            image, matrix, (w, h), borderValue=(255, 255, 255)
+            image, matrix, (w, h), borderValue=(0, 0, 0)
         )
         return transformed_image
 

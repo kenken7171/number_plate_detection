@@ -50,7 +50,7 @@ class ImageSetter:
         if self.conflict_checker.checker(rect, self.rect_list):
             self.rect_list.append(rect)
             self.class_id_list.append(class_id)
-            self.__make_composite_image(target_image, rect)
+            self.composite_image = self.__make_composite_image(target_image, rect)
         return self.composite_image
 
     def __random_rect(self, target_image):
