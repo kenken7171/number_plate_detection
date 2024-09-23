@@ -20,7 +20,7 @@ if __name__ == "__main__":
     number_plate_image_list.append(number_plate_image)
 
     # number_plate_imageを保存
-    cv2.imwrite("output_plate_image.jpg", number_plate_image)
+    cv2.imwrite("plate_image.jpg", number_plate_image)
 
     # ./data/backimage/samlpe.jpgを読み込み、number_plate_imageをsample.jpgに入れる
     back_image = cv2.imread("./data/backimage/sample.jpg")
