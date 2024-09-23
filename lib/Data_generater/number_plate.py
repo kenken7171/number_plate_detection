@@ -11,12 +11,14 @@ category: 分類
 2:自家用軽自動車
 3:事業用軽自動車
 """
+
 import random
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import os
 import sys
+
 sys.path.append(os.path.dirname(__file__))
 
 
@@ -38,6 +40,9 @@ class NumberPlate:
         self.__back_color_list = [white, green, yellow, black]
         self.__text_color_list = [green, white, black, yellow]
         self.__gray_color = gray
+
+    def get_max_category_length(self):
+        return len(self.__back_color_list) - 1
 
     def __drawText(
         self, img, text, position, fontFace, fontScale, text_color, stroke_width
@@ -73,7 +78,7 @@ class NumberPlate:
             "川崎",
             "堺",
             "相模原",
-            "和泉"
+            "和泉",
         ]
 
         index = random.randint(0, len(list) - 1)
@@ -86,7 +91,52 @@ class NumberPlate:
 
     def __generate_hiragana(self):
         # すべてのひらがなをリストに追加
-        list = ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ", "た", "ち", "つ", "て", "と", "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "へ", "ほ", "ま", "み", "む", "め", "も", "や", "ゆ", "よ", "ら", "り", "る", "れ", "ろ", "わ"]
+        list = [
+            "あ",
+            "い",
+            "う",
+            "え",
+            "お",
+            "か",
+            "き",
+            "く",
+            "け",
+            "こ",
+            "さ",
+            "し",
+            "す",
+            "せ",
+            "そ",
+            "た",
+            "ち",
+            "つ",
+            "て",
+            "と",
+            "な",
+            "に",
+            "ぬ",
+            "ね",
+            "の",
+            "は",
+            "ひ",
+            "ふ",
+            "へ",
+            "ほ",
+            "ま",
+            "み",
+            "む",
+            "め",
+            "も",
+            "や",
+            "ゆ",
+            "よ",
+            "ら",
+            "り",
+            "る",
+            "れ",
+            "ろ",
+            "わ",
+        ]
         index = random.randint(0, len(list) - 1)
         return list[index]
 

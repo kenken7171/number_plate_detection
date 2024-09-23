@@ -31,7 +31,7 @@ class AffineTransformer:
 
         # 変換後の画像を生成、余白は黒で埋める
         transformed_image = cv2.warpPerspective(
-            image, matrix, (w, h), borderValue=(0, 0, 0)
+            image, matrix, (w, h), borderValue=(255, 255, 255)
         )
         return transformed_image
 
@@ -88,7 +88,7 @@ class AffineTransformer:
 if __name__ == "__main__":
     # 例:
     # 入力画像の読み込み
-    image = cv2.imread("0000.jpeg")
+    image = cv2.imread("sample.jpg")
     # print(image.shape)
     affine_transfer = AffineTransformer()
     # 画像を変換

@@ -1,137 +1,88 @@
 import cv2
 import numpy as np
 import random
+from PIL import Image
+
+
+class Conflict_checker:
+    def __init__(self, multiplicity_rate):
+        self.__multiplicity_rate = multiplicity_rate
+
+    def checker(self, rect, rect_list):
+        conflict = False
+        for r in rect_list:
+            iou = self.__multiplicity(r, rect)
+            if iou > self.__multiplicity_rate:
+                conflict = True
+                break
+        if not conflict:
+            return True
+        return False
+
+    def __multiplicity(self, rect1, rect2):
+        (ax_mn, ay_mn) = rect1[0]
+        (ax_mx, ay_mx) = rect1[1]
+        (bx_mn, by_mn) = rect2[0]
+        (bx_mx, by_mx) = rect2[1]
+        a_area = (ax_mx - ax_mn + 1) * (ay_mx - ay_mn + 1)
+        b_area = (bx_mx - bx_mn + 1) * (by_mx - by_mn + 1)
+        abx_mn = max(ax_mn, bx_mn)
+        aby_mn = max(ay_mn, by_mn)
+        abx_mx = min(ax_mx, bx_mx)
+        aby_mx = min(ay_mx, by_mx)
+        w = max(0, abx_mx - abx_mn + 1)
+        h = max(0, aby_mx - aby_mn + 1)
+        intersect = w * h
+        return intersect / (a_area + b_area - intersect)
 
 
 class ImageSetter:
-    def __init__(self):
-        self.image = None
-        self.random_try_count = 5
+    def __init__(self, back_image, multiplicity_rate=0):
+        self.composite_image = back_image
+        self.height = back_image.shape[0]
+        self.width = back_image.shape[1]
+        self.conflict_checker = Conflict_checker(multiplicity_rate)
+        self.rect_list = []
+        self.class_id_list = []
 
-    def init_image(self, image_width, image_height):
-        """
-        画像を初期化する
+    def append(self, target_image, class_id):
+        rect = self.__random_rect(target_image)
+        if self.conflict_checker.checker(rect, self.rect_list):
+            self.rect_list.append(rect)
+            self.class_id_list.append(class_id)
+            self.__make_composite_image(target_image, rect)
+        return self.composite_image
 
-        Args:
-        image_width (int): 画像の幅
-        image_height (int): 画像の高さ
+    def __random_rect(self, target_image):
+        target_height = target_image.shape[0]
+        target_width = target_image.shape[1]
+        x = random.randint(0, self.width - target_width)
+        y = random.randint(0, self.height - target_height)
+        return (x, y), (x + target_width, y + target_height)
 
-        Returns:
-        numpy.ndarray: 初期化された画像
-        """
-        # 画像を初期化
-        self.image = np.zeros((image_height, image_width, 3), np.uint8)
+    def __make_composite_image(self, target_image_, rect):
+        # target_image_のチャンネル数が4でない場合、4に変換
+        if len(target_image_.shape) == 3:
+            target_image_ = cv2.cvtColor(target_image_, cv2.COLOR_BGR2BGRA)
+        target_image = np.zeros((self.height, self.width, 4), np.uint8)
+        # target_image_を貼り付けるために、target_imageを作成
+        (x_mn, y_mn), (x_mx, y_mx) = rect
+        target_image[y_mn:y_mx, x_mn:x_mx] = target_image_
+        back_pil = Image.fromarray(self.composite_image)
+        front_pil = Image.fromarray(target_image)
+        back_pil.paste(front_pil, (rect[0][0], rect[0][1]), front_pil)
+        return np.array(back_pil)
 
-    # 画像の透過処理を行う関数。黒を透過する。
-    def transparent_processing(self, image):
-        """
-        画像の透過処理を行う
-
-        Args:
-        image (numpy.ndarray): 透過処理を行う画像
-
-        Returns:
-        numpy.ndarray: 透過処理後の画像
-        """
-        # 画像の高さと幅
-        height, width = image.shape[:2]
-
-        # 黒色部分に対応するマスク画像を生成
-        mask = np.all(image == [0, 0, 0], axis=2)
-
-        # 元画像をBGR形式からBGRA形式に変換
-        dst = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
-
-        # マスク画像をもとに、黒色部分を透明化
-        dst[:, :, 3] = np.where(mask, 0, 255)
-
-        # BGRA形式からBGR形式に変換
-        image = cv2.cvtColor(dst, cv2.COLOR_BGRA2BGR)
-
-        return image
-
-    # 背景の画像に挿入したい画像を挿入する関数
-    # bg_image: 背景の画像
-    # fg_image: 挿入したい画像
-    def set_image(self, bg_image, fg_image, x, y):
-        """
-        背景の画像に挿入したい画像を挿入する
-
-        Args:
-        bg_image (numpy.ndarray): 背景の画像
-        fg_image (numpy.ndarray): 挿入したい画像
-        x (int): 挿入するx座標
-        y (int): 挿入するy座標
-
-        Returns:
-        numpy.ndarray: 挿入後の画像
-        """
-        # 背景画像の高さと幅
-        bg_height, bg_width = bg_image.shape[:2]
-
-        # 挿入したい画像の高さと幅
-        fg_height, fg_width = fg_image.shape[:2]
-
-        # 挿入したい画像の範囲が背景画像の範囲を超えていないか確認
-        if x + fg_width > bg_width or y + fg_height > bg_height:
-            raise ValueError("挿入したい画像が背景画像の範囲を超えています")
-
-        # 挿入したい画像の透過処理
-        fg_image = self.transparent_processing(fg_image)
-
-        # 背景画像に挿入したい画像を挿入
-        bg_image[y : y + fg_height, x : x + fg_width] = fg_image
-
-        return bg_image
-
-    # range_widthの範囲内でself.imageの値が0でない場合にbg_imageにfg_imageを挿入する関数。
-    # もしself.imageの値が0でない場合には、self.random_try_count回繰り返す。
-    # それでもself.imageの値が0でない場合には、Falseを返す。
-    def random_image_setter(self, bg_image, fg_image, range_width, range_height):
-        """
-        range_widthの範囲内でself.imageの値が0でない場合にbg_imageにfg_imageを挿入する。
-        もしself.imageの値が0でない場合には、self.random_try_count回繰り返す。
-        それでもself.imageの値が0でない場合には、Falseを返す。
-
-        Args:
-        bg_image (numpy.ndarray): 背景の画像
-        fg_image (numpy.ndarray): 挿入したい画像
-        range_width (list[float]): 挿入するx座標の範囲、値としては0から1の範囲
-        range_height (list[float]): 挿入するy座標の範囲、値としては0から1の範囲
-
-        Returns:
-        numpy.ndarray: 挿入後の画像
-        """
-        # 背景画像の高さと幅
-        bg_height, bg_width = bg_image.shape[:2]
-
-        # 挿入したい画像の高さと幅
-        fg_height, fg_width = fg_image.shape[:2]
-
-        # 挿入したい画像の透過処理
-        fg_image = self.transparent_processing(fg_image)
-
-        # 挿入するx座標の範囲
-        x_range = (int(bg_width * range_width[0]), int(bg_width * range_width[1]))
-
-        # 挿入するy座標の範囲
-        y_range = (int(bg_height * range_height[0]), int(bg_height * range_height[1]))
-
-        while_count = 0
-        while while_count <= self.random_try_count:
-            # 挿入するx座標とy座標
-            x = random.randint(x_range[0], x_range[1])
-            y = random.randint(y_range[0], y_range[1])
-            # 挿入したい画像の範囲が背景画像の範囲を超えていないか確認
-            if x + fg_width > bg_width or y + fg_height > bg_height:
-                continue
-            # 挿入する範囲のself.imageの値が0であるか確認
-            if np.all(self.image[y : y + fg_height, x : x + fg_width] == 0):
-                # 挿入したい画像を挿入
-                return self.set_image(bg_image, fg_image, x, y)
-            while_count += 1
-
-        return False
+    def make_yolo_label(self):
+        label = ""
+        for i in range(len(self.rect_list)):
+            (x_mn, y_mn), (x_mx, y_mx) = self.rect_list[i]
+            x = (x_mn + x_mx) / 2 / self.width
+            y = (y_mn + y_mx) / 2 / self.height
+            w = (x_mx - x_mn) / self.width
+            h = (y_mx - y_mn) / self.height
+            label += f"{self.class_id_list[i]} {x} {y} {w} {h}\n"
+        return label
 
 
 if __name__ == "__main__":
