@@ -34,7 +34,7 @@ class Back_Image:
         return back_image
 
 
-class Tarqet_Image_util:
+class Target_Image_util:
     def __init__(self, min_size_rate, max_size_rate):
         self.min_size_rate = min_size_rate
         self.max_size_rate = max_size_rate
@@ -69,7 +69,7 @@ class Number_plate_wrapper:
 def main():
     print("main")
     os.makedirs(OUTPUT_PATH, exist_ok=True)
-    target_image_util = Tarqet_Image_util(MIN_SIZE_RATE, MAX_SIZE_RATE)
+    target_image_util = Target_Image_util(MIN_SIZE_RATE, MAX_SIZE_RATE)
     back_image_class = Back_Image(BACKIMAGE_PATH)
     number_plate_wrapper = Number_plate_wrapper()
     bright_changer = bc.BrightChanger()
@@ -82,8 +82,9 @@ def main():
             number_plate_image = target_image_util.change_size(number_plate_image)
             number_plate_image = bright_changer.change(number_plate_image)
             number_plate_image = affine_transformer.transform(number_plate_image)
-            composite_image = image_setter.append(number_plate_image, class_id)
-            cv2.imwrite(OUTPUT_PATH + f"output_{i}.jpg", composite_image)
+            composite_image = image_setter.set(number_plate_image, class_id)
+        print(composite_image.shape)
+        cv2.imwrite(OUTPUT_PATH + f"output_{i}.jpg", composite_image)
 
 
 if __name__ == "__main__":

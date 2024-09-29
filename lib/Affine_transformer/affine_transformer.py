@@ -29,9 +29,13 @@ class AffineTransformer:
         # 画像サイズ（幅と高さ）
         h, w = image.shape[:2]
 
+        # imageをBGRA形式に変換
+        if len(image.shape) == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+
         # 変換後の画像を生成、余白は黒で埋める
         transformed_image = cv2.warpPerspective(
-            image, matrix, (w, h), borderValue=(0, 0, 0)
+            image, matrix, (w, h), borderValue=(0, 0, 0, 0)
         )
         return transformed_image
 

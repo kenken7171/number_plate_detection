@@ -8,7 +8,7 @@ class Conflict_checker:
     def __init__(self, multiplicity_rate):
         self.__multiplicity_rate = multiplicity_rate
 
-    def checker(self, rect, rect_list):
+    def check(self, rect, rect_list):
         conflict = False
         for r in rect_list:
             iou = self.__multiplicity(r, rect)
@@ -45,15 +45,17 @@ class ImageSetter:
         self.rect_list = []
         self.class_id_list = []
 
-    def append(self, target_image, class_id):
-        rect = self.__random_rect(target_image)
-        if self.conflict_checker.checker(rect, self.rect_list):
+    def set(self, target_image, class_id):
+        rect = self.__get_random_position(target_image)
+        is_conflict = self.conflict_checker.check(rect, self.rect_list)
+        if is_conflict:
             self.rect_list.append(rect)
             self.class_id_list.append(class_id)
             self.composite_image = self.__make_composite_image(target_image, rect)
+        print(is_conflict)
         return self.composite_image
 
-    def __random_rect(self, target_image):
+    def __get_random_position(self, target_image):
         target_height = target_image.shape[0]
         target_width = target_image.shape[1]
         x = random.randint(0, self.width - target_width)
@@ -61,16 +63,24 @@ class ImageSetter:
         return (x, y), (x + target_width, y + target_height)
 
     def __make_composite_image(self, target_image_, rect):
+        position = (rect[0][1], rect[0][0])
+        # print(position)
         # target_image_のチャンネル数が4でない場合、4に変換
         if len(target_image_.shape) == 3:
             target_image_ = cv2.cvtColor(target_image_, cv2.COLOR_BGR2BGRA)
-        target_image = np.zeros((self.height, self.width, 4), np.uint8)
+        # print(target_image_.shape)
+        # target_image = np.zeros((self.height, self.width, 4), np.uint8)
+        # target_image_をImageに変換
+        front_pil = Image.fromarray(target_image_)
         # target_image_を貼り付けるために、target_imageを作成
-        (x_mn, y_mn), (x_mx, y_mx) = rect
-        target_image[y_mn:y_mx, x_mn:x_mx] = target_image_
+        # (x_mn, y_mn), (x_mx, y_mx) = rect
+        # target_image[y_mn:y_mx, x_mn:x_mx] = target_image_
         back_pil = Image.fromarray(self.composite_image)
-        front_pil = Image.fromarray(target_image)
-        back_pil.paste(front_pil, (rect[0][0], rect[0][1]), front_pil)
+        # front_pil = Image.fromarray(target_image)
+        # back_pil.paste(front_pil, (rect[0][1], rect[0][0]), front_pil)
+        back_pil.paste(front_pil, position)
+        # print(front_pil.width, front_pil.height)
+        # print(back_pil.width, back_pil.height)
         return np.array(back_pil)
 
     def make_yolo_label(self):
