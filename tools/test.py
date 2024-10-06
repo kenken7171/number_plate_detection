@@ -83,8 +83,9 @@ def main():
             number_plate_image = bright_changer.change(number_plate_image)
             number_plate_image = affine_transformer.transform(number_plate_image)
             composite_image = image_setter.set(number_plate_image, class_id)
-        print(composite_image.shape)
-        cv2.imwrite(OUTPUT_PATH + f"output_{i}.jpg", composite_image)
+        image_name = f"output_{i}.jpg"
+        cv2.imwrite(OUTPUT_PATH + image_name, composite_image)
+        print(image_setter.get_yolo_label())
 
 
 if __name__ == "__main__":

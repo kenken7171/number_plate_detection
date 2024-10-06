@@ -37,6 +37,9 @@ class AffineTransformer:
         transformed_image = cv2.warpPerspective(
             image, matrix, (w, h), borderValue=(0, 0, 0, 0)
         )
+
+        # アルファチャンネルが0でない部分は1にする
+        transformed_image[:, :, 3] = np.where(transformed_image[:, :, 3] > 0, 1, 0)
         return transformed_image
 
     def transform(self, image):

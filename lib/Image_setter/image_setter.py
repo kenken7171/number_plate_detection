@@ -39,6 +39,7 @@ class Conflict_checker:
 class ImageSetter:
     def __init__(self, back_image, multiplicity_rate=0):
         self.composite_image = back_image
+        self.composite_image = cv2.cvtColor(self.composite_image, cv2.COLOR_BGR2BGRA)
         self.height = back_image.shape[0]
         self.width = back_image.shape[1]
         self.conflict_checker = Conflict_checker(multiplicity_rate)
@@ -52,7 +53,6 @@ class ImageSetter:
             self.rect_list.append(rect)
             self.class_id_list.append(class_id)
             self.composite_image = self.__make_composite_image(target_image, rect)
-        print(is_conflict)
         return self.composite_image
 
     def __get_random_position(self, target_image):
@@ -62,26 +62,18 @@ class ImageSetter:
         y = random.randint(0, self.height - target_height)
         return (x, y), (x + target_width, y + target_height)
 
-    def __make_composite_image(self, target_image_, rect):
-        position = (rect[0][1], rect[0][0])
-        # print(position)
-        # target_image_のチャンネル数が4でない場合、4に変換
-        if len(target_image_.shape) == 3:
-            target_image_ = cv2.cvtColor(target_image_, cv2.COLOR_BGR2BGRA)
-        # print(target_image_.shape)
-        # target_image = np.zeros((self.height, self.width, 4), np.uint8)
-        # target_image_をImageに変換
-        front_pil = Image.fromarray(target_image_)
-        # target_image_を貼り付けるために、target_imageを作成
-        # (x_mn, y_mn), (x_mx, y_mx) = rect
-        # target_image[y_mn:y_mx, x_mn:x_mx] = target_image_
-        back_pil = Image.fromarray(self.composite_image)
-        # front_pil = Image.fromarray(target_image)
-        # back_pil.paste(front_pil, (rect[0][1], rect[0][0]), front_pil)
-        back_pil.paste(front_pil, position)
-        # print(front_pil.width, front_pil.height)
-        # print(back_pil.width, back_pil.height)
-        return np.array(back_pil)
+    def __make_composite_image(self, target_image, rect):
+        # target_imageのアルファチェンネルがない場合、アルファチャンネルを追加
+        if len(target_image.shape) == 3:
+            target_image = cv2.cvtColor(target_image, cv2.COLOR_BGR2BGRA)
+        # target_imageのアルファチャンネルが0の場合はtarget_imageを貼り付ける。
+        # それ以外はself.composite_imageを貼り付ける。
+        (x_mn, y_mn), (x_mx, y_mx) = rect
+        for y in range(y_mn, y_mx):
+            for x in range(x_mn, x_mx):
+                if target_image[y - y_mn, x - x_mn, 3:] != 0:
+                    self.composite_image[y, x] = target_image[y - y_mn, x - x_mn]
+        return self.composite_image
 
     def make_yolo_label(self):
         label = ""
@@ -93,6 +85,9 @@ class ImageSetter:
             h = (y_mx - y_mn) / self.height
             label += f"{self.class_id_list[i]} {x} {y} {w} {h}\n"
         return label
+
+    def get_yolo_label(self):
+        return self.make_yolo_label()
 
 
 if __name__ == "__main__":
