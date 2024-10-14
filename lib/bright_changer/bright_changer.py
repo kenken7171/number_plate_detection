@@ -4,12 +4,14 @@ import random
 
 
 class BrightChanger:
-    def __init__(self):
+    def __init__(self,min_rate=0.5,max_rate=1.0):
+        self.min_rate = min_rate
+        self.max_rate = max_rate
         self.bright_rate = 1.0
 
     def get_random_rate(self):
         # 0.5 ~ 1.0の範囲でランダムな明るさを設定
-        return random.uniform(0.5, 1.0)
+        return random.uniform(self.min_rate, self.max_rate)
 
     def change(self, image):
         self.bright_rate = self.get_random_rate()
